@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>next gen ai sandbox v1.0</title>
+    <title>C.AI 2024 Revival</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -92,8 +92,9 @@
     </div>
 
     <script>
-        // We will replace this URL with your Render link once the backend is live!
-        const BACKEND_URL = "http://localhost:5000"; 
+        // HARDCODED API KEY - PLACED DIRECTLY IN THE HTML AS REQUESTED
+        const GEMINI_API_KEY = "AQ.Ab8RN6LC3-2M0ma_paupRT8xqnG-bc9UV6PVLimZI3ENlkONlg"; 
+        
         let chatHistory = [];
 
         function initializeCharacter() {
@@ -127,30 +128,38 @@
             addMessageBubble("You", messageText, "user");
             userInput.value = ''; 
 
+            // Track user input in the chat sequence format Gemini expects
+            chatHistory.push({ role: 'user', parts: [{ text: messageText }] });
+
             const typingBubble = addMessageBubble(charName, "Thinking...", "bot");
 
             try {
-                // Sending custom character parameters and context directly to our backend
-                const response = await fetch(`${BACKEND_URL}/api/chat`, {
+                // Direct fetch request to Google Gemini API straight from the browser
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        personality_prompt: charPrompt,
-                        chatHistory: chatHistory,
-                        userMessage: messageText
+                        contents: chatHistory,
+                        systemInstruction: {
+                            parts: [{ text: `You are simulating an old school roleplay bot. Follow this character persona strictly: ${charPrompt}` }]
+                        },
+                        generationConfig: {
+                            temperature: 0.85 
+                        }
                     })
                 });
 
                 const data = await response.json();
-                typingBubble.innerHTML = `<strong>${charName}:</strong> ${data.reply}`;
+                const botReply = data.candidates[0].content.parts[0].text;
 
-                // Track history updates locally
-                chatHistory.push({ role: 'user', text: messageText });
-                chatHistory.push({ role: 'model', text: data.reply });
+                typingBubble.innerHTML = `<strong>${charName}:</strong> ${botReply}`;
+
+                // Track model response in history
+                chatHistory.push({ role: 'model', parts: [{ text: botReply }] });
 
             } catch (error) {
                 console.error(error);
-                typingBubble.innerHTML = `<strong>${charName}:</strong> <em>Error: Couldn't connect to backend server.</em>`;
+                typingBubble.innerHTML = `<strong>${charName}:</strong> <em>Error: Failed to fetch reply from Gemini API. Check your key.</em>`;
             }
         }
 
