@@ -1,97 +1,189 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta http-equiv="X-UA-Compatible" content="IE=edge">
-<title>Samsung TV Information Dashboard</title>
-<style>
-body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#1b1b1b;color:#fff}
-header{background:#0b63ce;padding:18px;text-align:center}
-#wrap{width:90%;max-width:1100px;margin:20px auto}
-table{width:100%;border-collapse:collapse;background:#2a2a2a}
-td{border:1px solid #444;padding:8px;vertical-align:top}
-td:first-child{width:260px;font-weight:bold;background:#333}
-.ok{color:#7CFC00}.bad{color:#ff6b6b}
-button{padding:10px 18px;margin:12px 6px 0 0}
-#log{height:180px;overflow:auto;background:#111;border:1px solid #444;padding:8px;font-family:monospace}
-</style>
-<script type="text/javascript">
-function $(i){return document.getElementById(i);}
-function set(id,v){$(id).innerHTML=v;}
-function log(t){var d=new Date();$("log").innerHTML+="["+d.toLocaleTimeString()+"] "+t+"<br>";$("log").scrollTop=$("log").scrollHeight;}
-function safe(fn){try{return fn();}catch(e){return "Unavailable";}}
-function update(){
- set("time",new Date().toLocaleString());
- set("ua",navigator.userAgent||"");
- set("platform",navigator.platform||"");
- set("lang",navigator.language||navigator.browserLanguage||"");
- set("online",navigator.onLine?'<span class="ok">Online</span>':'<span class="bad">Offline</span>');
- set("cookie",navigator.cookieEnabled?"Enabled":"Disabled");
- set("java",(navigator.javaEnabled&&navigator.javaEnabled())?"Enabled":"Unavailable");
- set("screen",screen.width+" x "+screen.height);
- set("avail",screen.availWidth+" x "+screen.availHeight);
- set("color",screen.colorDepth);
- set("pixel",screen.pixelDepth);
- set("window",window.innerWidth+" x "+window.innerHeight);
- set("url",location.href);
- set("host",location.hostname);
- set("protocol",location.protocol);
- set("history",history.length);
- set("tz", (window.Intl&&Intl.DateTimeFormat)?Intl.DateTimeFormat().resolvedOptions().timeZone:"Unknown");
- if(window.tizen){
-   set("tizen","Detected");
-   set("model",safe(function(){return tizen.systeminfo.getCapability("http://tizen.org/system/model_name");}));
-   set("firmware",safe(function(){return tizen.systeminfo.getCapability("http://tizen.org/system/build.string");}));
-   set("platformver",safe(function(){return tizen.systeminfo.getCapability("http://tizen.org/feature/platform.version");}));
- } else {
-   set("tizen","Not running in Tizen");
-   set("model","Unavailable");
-   set("firmware","Unavailable");
-   set("platformver","Unavailable");
- }
-}
-window.onload=function(){update();log("Dashboard started.");setInterval(update,1000);}
-document.onkeydown=function(e){
- e=e||window.event;
- var k=e.keyCode||e.which;
- set("lastkey",k);
- log("Key pressed: "+k);
- if(k==10009&&window.tizen){
-   try{tizen.application.getCurrentApplication().exit();}catch(err){}
- }
-}
-</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TV Flappy Bird</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #70c5ce;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Arial', sans-serif;
+        }
+        canvas {
+            border: 5px solid #fff;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            background-color: #70c5ce;
+        }
+        #ui {
+            position: absolute;
+            color: white;
+            text-align: center;
+            pointer-events: none;
+            text-shadow: 2px 2px #000;
+        }
+    </style>
 </head>
 <body>
-<header><h1>Samsung TV Information Dashboard</h1><div>Legacy Browser Compatible</div></header>
-<div id="wrap">
-<button onclick="update()">Refresh</button>
-<table>
-<tr><td>Current Time</td><td id="time"></td></tr>
-<tr><td>Samsung Model</td><td id="model"></td></tr>
-<tr><td>Firmware</td><td id="firmware"></td></tr>
-<tr><td>Tizen Platform</td><td id="platformver"></td></tr>
-<tr><td>Tizen Status</td><td id="tizen"></td></tr>
-<tr><td>User Agent</td><td id="ua"></td></tr>
-<tr><td>Platform</td><td id="platform"></td></tr>
-<tr><td>Language</td><td id="lang"></td></tr>
-<tr><td>Online</td><td id="online"></td></tr>
-<tr><td>Cookies</td><td id="cookie"></td></tr>
-<tr><td>Java</td><td id="java"></td></tr>
-<tr><td>Screen</td><td id="screen"></td></tr>
-<tr><td>Available Screen</td><td id="avail"></td></tr>
-<tr><td>Window Size</td><td id="window"></td></tr>
-<tr><td>Color Depth</td><td id="color"></td></tr>
-<tr><td>Pixel Depth</td><td id="pixel"></td></tr>
-<tr><td>Time Zone</td><td id="tz"></td></tr>
-<tr><td>URL</td><td id="url"></td></tr>
-<tr><td>Hostname</td><td id="host"></td></tr>
-<tr><td>Protocol</td><td id="protocol"></td></tr>
-<tr><td>History Length</td><td id="history"></td></tr>
-<tr><td>Last Remote Key</td><td id="lastkey">None</td></tr>
-</table>
-<h2>Diagnostic Log</h2>
-<div id="log"></div>
-</div>
+
+    <div id="ui">
+        <h1 id="msg">Press OK to Start</h1>
+        <h2 id="score">Score: 0</h2>
+    </div>
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const msgDisplay = document.getElementById('msg');
+        const scoreDisplay = document.getElementById('score');
+
+        // Set canvas size for TV (Maintain aspect ratio)
+        canvas.width = 400;
+        canvas.height = 600;
+
+        // Game Constants
+        const GRAVITY = 0.25;
+        const JUMP = -5.5;
+        const PIPE_SPEED = 2;
+        const PIPE_SPAWN_RATE = 100; // frames
+        const PIPE_GAP = 160;
+
+        let bird = { x: 50, y: 300, velocity: 0, radius: 15 };
+        let pipes = [];
+        let frameCount = 0;
+        let score = 0;
+        let gameActive = false;
+
+        // Remote Control Listeners
+        window.addEventListener('keydown', (e) => {
+            // KeyCode 13 is 'Enter' (Samsung OK button), KeyCode 38 is 'ArrowUp'
+            if (e.keyCode === 13 || e.keyCode === 38 || e.code === 'Space') {
+                handleAction();
+            }
+        });
+
+        // Touch/Click for testing or magic remotes
+        window.addEventListener('click', handleAction);
+
+        function handleAction() {
+            if (!gameActive) {
+                resetGame();
+                gameActive = true;
+                msgDisplay.innerText = "";
+            } else {
+                bird.velocity = JUMP;
+            }
+        }
+
+        function resetGame() {
+            bird.y = 300;
+            bird.velocity = 0;
+            pipes = [];
+            score = 0;
+            frameCount = 0;
+            scoreDisplay.innerText = "Score: 0";
+        }
+
+        function createPipe() {
+            let minHeight = 50;
+            let maxHeight = canvas.height - PIPE_GAP - 50;
+            let height = Math.floor(Math.random() * (maxHeight - minHeight + 1)) + minHeight;
+            pipes.push({ x: canvas.width, y: height });
+        }
+
+        function update() {
+            if (!gameActive) return;
+
+            // Bird Physics
+            bird.velocity += GRAVITY;
+            bird.y += bird.velocity;
+
+            // Floor/Ceiling collision
+            if (bird.y + bird.radius > canvas.height || bird.y - bird.radius < 0) {
+                gameOver();
+            }
+
+            // Pipe Logic
+            if (frameCount % PIPE_SPAWN_RATE === 0) createPipe();
+
+            for (let i = pipes.length - 1; i >= 0; i--) {
+                pipes[i].x -= PIPE_SPEED;
+
+                // Collision detection
+                if (
+                    bird.x + bird.radius > pipes[i].x &&
+                    bird.x - bird.radius < pipes[i].x + 50 &&
+                    (bird.y - bird.radius < pipes[i].y || bird.y + bird.radius > pipes[i].y + PIPE_GAP)
+                ) {
+                    gameOver();
+                }
+
+                // Scoring
+                if (pipes[i].x === bird.x) {
+                    score++;
+                    scoreDisplay.innerText = "Score: " + score;
+                }
+
+                // Remove off-screen pipes
+                if (pipes[i].x + 50 < 0) pipes.splice(i, 1);
+            }
+
+            frameCount++;
+        }
+
+        function gameOver() {
+            gameActive = false;
+            msgDisplay.innerText = "GAME OVER\nPress OK to Restart";
+        }
+
+        function draw() {
+            // Clear Background
+            ctx.fillStyle = "#70c5ce";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw Pipes
+            ctx.fillStyle = "#2ecc71";
+            pipes.forEach(p => {
+                // Top Pipe
+                ctx.fillRect(p.x, 0, 50, p.y);
+                ctx.strokeRect(p.x, 0, 50, p.y);
+                // Bottom Pipe
+                ctx.fillRect(p.x, p.y + PIPE_GAP, 50, canvas.height);
+                ctx.strokeRect(p.x, p.y + PIPE_GAP, 50, canvas.height);
+            });
+
+            // Draw Bird
+            ctx.fillStyle = "#f1c40f";
+            ctx.beginPath();
+            ctx.arc(bird.x, bird.y, bird.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = "black";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // Eye
+            ctx.fillStyle = "white";
+            ctx.beginPath();
+            ctx.arc(bird.x + 8, bird.y - 5, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = "black";
+            ctx.beginPath();
+            ctx.arc(bird.x + 10, bird.y - 5, 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            requestAnimationFrame(() => {
+                update();
+                draw();
+            });
+        }
+
+        draw();
+    </script>
 </body>
 </html>
