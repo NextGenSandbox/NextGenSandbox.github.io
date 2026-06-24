@@ -1,155 +1,97 @@
-<!DOCTYPE HTML>
+<!DOCTYPE html>
 <html>
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<title>Samsung TV Information</title>
-
-<style type="text/css">
-body{
-    font-family:Arial,Helvetica,sans-serif;
-    background:#202020;
-    color:#FFFFFF;
-    margin:20px;
-}
-
-h1{
-    color:#00AEEF;
-}
-
-table{
-    width:100%;
-    border-collapse:collapse;
-}
-
-td{
-    border:1px solid #555555;
-    padding:8px;
-}
-
-.label{
-    width:220px;
-    font-weight:bold;
-    background:#333333;
-}
-
-button{
-    padding:10px;
-    font-size:16px;
-}
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>Samsung TV Information Dashboard</title>
+<style>
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#1b1b1b;color:#fff}
+header{background:#0b63ce;padding:18px;text-align:center}
+#wrap{width:90%;max-width:1100px;margin:20px auto}
+table{width:100%;border-collapse:collapse;background:#2a2a2a}
+td{border:1px solid #444;padding:8px;vertical-align:top}
+td:first-child{width:260px;font-weight:bold;background:#333}
+.ok{color:#7CFC00}.bad{color:#ff6b6b}
+button{padding:10px 18px;margin:12px 6px 0 0}
+#log{height:180px;overflow:auto;background:#111;border:1px solid #444;padding:8px;font-family:monospace}
 </style>
-
 <script type="text/javascript">
-
-function setValue(id,value){
-    document.getElementById(id).innerHTML=value;
+function $(i){return document.getElementById(i);}
+function set(id,v){$(id).innerHTML=v;}
+function log(t){var d=new Date();$("log").innerHTML+="["+d.toLocaleTimeString()+"] "+t+"<br>";$("log").scrollTop=$("log").scrollHeight;}
+function safe(fn){try{return fn();}catch(e){return "Unavailable";}}
+function update(){
+ set("time",new Date().toLocaleString());
+ set("ua",navigator.userAgent||"");
+ set("platform",navigator.platform||"");
+ set("lang",navigator.language||navigator.browserLanguage||"");
+ set("online",navigator.onLine?'<span class="ok">Online</span>':'<span class="bad">Offline</span>');
+ set("cookie",navigator.cookieEnabled?"Enabled":"Disabled");
+ set("java",(navigator.javaEnabled&&navigator.javaEnabled())?"Enabled":"Unavailable");
+ set("screen",screen.width+" x "+screen.height);
+ set("avail",screen.availWidth+" x "+screen.availHeight);
+ set("color",screen.colorDepth);
+ set("pixel",screen.pixelDepth);
+ set("window",window.innerWidth+" x "+window.innerHeight);
+ set("url",location.href);
+ set("host",location.hostname);
+ set("protocol",location.protocol);
+ set("history",history.length);
+ set("tz", (window.Intl&&Intl.DateTimeFormat)?Intl.DateTimeFormat().resolvedOptions().timeZone:"Unknown");
+ if(window.tizen){
+   set("tizen","Detected");
+   set("model",safe(function(){return tizen.systeminfo.getCapability("http://tizen.org/system/model_name");}));
+   set("firmware",safe(function(){return tizen.systeminfo.getCapability("http://tizen.org/system/build.string");}));
+   set("platformver",safe(function(){return tizen.systeminfo.getCapability("http://tizen.org/feature/platform.version");}));
+ } else {
+   set("tizen","Not running in Tizen");
+   set("model","Unavailable");
+   set("firmware","Unavailable");
+   set("platformver","Unavailable");
+ }
 }
-
-function loadInfo(){
-
-    setValue("ua",navigator.userAgent);
-
-    setValue("platform",navigator.platform);
-
-    setValue("language",navigator.language || navigator.browserLanguage);
-
-    setValue("cookies",navigator.cookieEnabled ? "Enabled" : "Disabled");
-
-    setValue("online",navigator.onLine ? "Yes" : "No");
-
-    setValue("screen",
-        screen.width + " x " + screen.height);
-
-    if(window.tizen){
-
-        try{
-            setValue(
-                "model",
-                tizen.systeminfo.getCapability(
-                    "http://tizen.org/system/model_name"
-                )
-            );
-        }catch(e){
-            setValue("model","Unavailable");
-        }
-
-        try{
-            setValue(
-                "firmware",
-                tizen.systeminfo.getCapability(
-                    "http://tizen.org/system/build.string"
-                )
-            );
-        }catch(e){
-            setValue("firmware","Unavailable");
-        }
-
-    }else{
-
-        setValue("model","Not running on Tizen");
-
-        setValue("firmware","Unavailable");
-
-    }
-
+window.onload=function(){update();log("Dashboard started.");setInterval(update,1000);}
+document.onkeydown=function(e){
+ e=e||window.event;
+ var k=e.keyCode||e.which;
+ set("lastkey",k);
+ log("Key pressed: "+k);
+ if(k==10009&&window.tizen){
+   try{tizen.application.getCurrentApplication().exit();}catch(err){}
+ }
 }
-
-window.onload=loadInfo;
-
 </script>
-
 </head>
-
 <body>
-
-<h1>Samsung TV Information</h1>
-
+<header><h1>Samsung TV Information Dashboard</h1><div>Legacy Browser Compatible</div></header>
+<div id="wrap">
+<button onclick="update()">Refresh</button>
 <table>
-
-<tr>
-<td class="label">Model</td>
-<td id="model">Loading...</td>
-</tr>
-
-<tr>
-<td class="label">Firmware</td>
-<td id="firmware">Loading...</td>
-</tr>
-
-<tr>
-<td class="label">Platform</td>
-<td id="platform"></td>
-</tr>
-
-<tr>
-<td class="label">User Agent</td>
-<td id="ua"></td>
-</tr>
-
-<tr>
-<td class="label">Language</td>
-<td id="language"></td>
-</tr>
-
-<tr>
-<td class="label">Screen Resolution</td>
-<td id="screen"></td>
-</tr>
-
-<tr>
-<td class="label">Cookies</td>
-<td id="cookies"></td>
-</tr>
-
-<tr>
-<td class="label">Online</td>
-<td id="online"></td>
-</tr>
-
+<tr><td>Current Time</td><td id="time"></td></tr>
+<tr><td>Samsung Model</td><td id="model"></td></tr>
+<tr><td>Firmware</td><td id="firmware"></td></tr>
+<tr><td>Tizen Platform</td><td id="platformver"></td></tr>
+<tr><td>Tizen Status</td><td id="tizen"></td></tr>
+<tr><td>User Agent</td><td id="ua"></td></tr>
+<tr><td>Platform</td><td id="platform"></td></tr>
+<tr><td>Language</td><td id="lang"></td></tr>
+<tr><td>Online</td><td id="online"></td></tr>
+<tr><td>Cookies</td><td id="cookie"></td></tr>
+<tr><td>Java</td><td id="java"></td></tr>
+<tr><td>Screen</td><td id="screen"></td></tr>
+<tr><td>Available Screen</td><td id="avail"></td></tr>
+<tr><td>Window Size</td><td id="window"></td></tr>
+<tr><td>Color Depth</td><td id="color"></td></tr>
+<tr><td>Pixel Depth</td><td id="pixel"></td></tr>
+<tr><td>Time Zone</td><td id="tz"></td></tr>
+<tr><td>URL</td><td id="url"></td></tr>
+<tr><td>Hostname</td><td id="host"></td></tr>
+<tr><td>Protocol</td><td id="protocol"></td></tr>
+<tr><td>History Length</td><td id="history"></td></tr>
+<tr><td>Last Remote Key</td><td id="lastkey">None</td></tr>
 </table>
-
-<br>
-
-<button onclick="loadInfo();">Refresh</button>
-
+<h2>Diagnostic Log</h2>
+<div id="log"></div>
+</div>
 </body>
 </html>
